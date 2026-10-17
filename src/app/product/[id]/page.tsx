@@ -2,13 +2,22 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToCart } from "@/components/add-to-cart";
 import { ProductTile } from "@/components/product-tile";
-import { getProduct } from "@/lib/catalog";
+import { getProduct, getUpsellProduct } from "@/lib/catalog";
+import { getAssignment } from "@/lib/experiments";
 import { formatPrice } from "@/lib/utils";
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await getProduct(id);
   if (!product) notFound();
+
+  // Variants are decided on the server, before rendering: the visitor never
+  // sees the control flash and then switch to the variant ("flicker").
+  const [upsellProduct, buttonTest, upsellTest] = await Promise.all([
+    getUpsellProduct(product.id),
+    getAssignment("atc-button"),
+    getAssignment("upsell-popin"),
+  ]);
 
   return (
     <>
@@ -23,7 +32,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           <p className="mt-4 text-2xl">{formatPrice(product.priceCents)}</p>
           <p className="mt-4 text-zinc-600">{product.description}</p>
           <div className="mt-8">
-            <AddToCart productId={product.id} />
+            <AddToCart
+              product={product}
+              upsellProduct={upsellProduct}
+              buttonTest={buttonTest}
+              upsellTest={upsellTest}
+            />
           </div>
         </div>
       </div>
