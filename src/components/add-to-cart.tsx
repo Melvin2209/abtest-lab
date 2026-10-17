@@ -3,7 +3,9 @@
 import { useState } from "react";
 import type { Product } from "@/lib/catalog";
 import type { Assignment } from "@/lib/experiments";
+import { track } from "@/lib/tracker";
 import { useCart } from "./cart-provider";
+import { Exposure } from "./exposure";
 import { UpsellPopin } from "./upsell-popin";
 
 type Props = {
@@ -24,12 +26,22 @@ export function AddToCart({ product, upsellProduct, buttonTest, upsellTest }: Pr
 
   function handleAdd() {
     add(product.id);
+    track({ type: "add_to_cart", productId: product.id, valueCents: product.priceCents });
+
+    // "Triggered" exposure: control and B only differ *after* add to cart, so this is
+    // the moment both groups are counted as exposed. Logging it on page view instead
+    // would dilute the test with visitors who never reached the pop-in.
+    if (upsellTest && upsellProduct)
+      track({ type: "exposure", experimentKey: upsellTest.experimentKey });
+
     setAdded(true);
     if (showPopin) setPopinOpen(true);
   }
 
   return (
     <div>
+      {/* The button is visible on page load: that is when "atc-button" users are exposed. */}
+      <Exposure assignment={buttonTest} />
       {buttonTest?.variantKey === "B" ? (
         // Variant B: full-width, colored, and reassures about delivery costs.
         <button

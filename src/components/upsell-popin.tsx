@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Product } from "@/lib/catalog";
+import { track } from "@/lib/tracker";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "./cart-provider";
 import { ProductTile } from "./product-tile";
@@ -43,6 +44,12 @@ export function UpsellPopin({
             type="button"
             onClick={() => {
               add(upsellProduct.id);
+              track({ type: "click", target: "upsell_add", productId: upsellProduct.id });
+              track({
+                type: "add_to_cart",
+                productId: upsellProduct.id,
+                valueCents: upsellProduct.priceCents,
+              });
               onClose();
             }}
             className="rounded-lg bg-indigo-600 px-4 py-3 font-medium text-white hover:bg-indigo-500"
@@ -58,7 +65,10 @@ export function UpsellPopin({
           </Link>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              track({ type: "click", target: "upsell_dismiss" });
+              onClose();
+            }}
             className="py-2 text-sm text-zinc-500 hover:text-zinc-900"
             data-testid="upsell-dismiss"
           >

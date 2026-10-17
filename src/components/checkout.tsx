@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/lib/catalog";
+import { track } from "@/lib/tracker";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "./cart-provider";
 import { useCartLines } from "./cart-view";
@@ -53,6 +54,8 @@ export function Checkout({ products }: { products: Product[] }) {
       <button
         type="button"
         onClick={() => {
+          // Sent immediately: the purchase is the event we can least afford to lose.
+          track({ type: "purchase", valueCents: totalCents }, { immediate: true });
           setOrderedCents(totalCents);
           clear();
         }}
