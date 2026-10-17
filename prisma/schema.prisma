@@ -24,14 +24,16 @@ model Product {
 }
 
 model Experiment {
-  id            String    @id @default(cuid())
-  key           String    @unique // stable identifier used in code and in the assignment hash
-  name          String
-  hypothesis    String
-  primaryMetric String // "add_to_cart" | "purchase"
-  status        String    @default("running") // "draft" | "running" | "stopped"
-  startedAt     DateTime  @default(now())
-  variants      Variant[]
+  id                  String    @id @default(cuid())
+  key                 String    @unique // stable identifier used in code and in the assignment hash
+  name                String
+  hypothesis          String
+  primaryMetric       String // "add_to_cart" | "purchase"
+  status              String    @default("running") // "draft" | "running" | "stopped"
+  // Sample size decided *before* the test starts: no verdict below it (limits "peeking").
+  minSamplePerVariant Int       @default(1000)
+  startedAt           DateTime  @default(now())
+  variants            Variant[]
 }
 
 model Variant {
