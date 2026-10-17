@@ -1,5 +1,5 @@
 import { db } from "../src/lib/db";
-import { experiments, products } from "./seed-data";
+import { experiments, products } from "../src/data/catalog-data";
 
 // Idempotent: safe to run several times. Existing data is updated, never duplicated.
 async function main() {
