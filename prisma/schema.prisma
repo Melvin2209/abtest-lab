@@ -1,0 +1,74 @@
+// Data model for abtest-lab.
+//
+// The schema is kept portable on purpose (no native enums, no JSON columns) so that
+// the exact same file works on SQLite (local dev, CI) and Postgres (Vercel).
+// `scripts/set-db-provider.mjs` switches the `provider` line below based on DATABASE_URL.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Product {
+  id          String @id
+  name        String
+  description String
+  category    String
+  priceCents  Int
+  emoji       String // stands in for a product image
+  color       String // background color of the product tile
+}
+
+model Experiment {
+  id            String    @id @default(cuid())
+  key           String    @unique // stable identifier used in code and in the assignment hash
+  name          String
+  hypothesis    String
+  primaryMetric String // "add_to_cart" | "purchase"
+  status        String    @default("running") // "draft" | "running" | "stopped"
+  startedAt     DateTime  @default(now())
+  variants      Variant[]
+}
+
+model Variant {
+  id           String     @id @default(cuid())
+  experimentId String
+  experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  key          String // "control", "B", ...
+  name         String
+  weight       Int // relative traffic share, e.g. 50/50 or 90/10
+
+  @@unique([experimentId, key])
+}
+
+// One row per (experiment, user): the first time a user actually saw a variant.
+// Only exposed users enter the analysis, which avoids diluting results with
+// visitors who never reached the tested component.
+model Exposure {
+  id            String   @id @default(cuid())
+  experimentKey String
+  variantKey    String
+  userId        String
+  exposedAt     DateTime @default(now())
+
+  @@unique([experimentKey, userId])
+  @@index([experimentKey, variantKey])
+}
+
+// Raw behavioural events. They are not tied to an experiment: the analysis joins
+// them to exposures by userId, so one purchase can count for several experiments.
+model Event {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String // "click" | "add_to_cart" | "purchase"
+  productId  String?
+  valueCents Int?
+  target     String? // what was clicked, e.g. "upsell_add"
+  createdAt  DateTime @default(now())
+
+  @@index([userId, type])
+}
