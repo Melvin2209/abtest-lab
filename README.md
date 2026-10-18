@@ -208,6 +208,7 @@ For the pop-in, the secondary metric "accessory added" goes from 3.8% to 15.9% (
 - **Revenue per visitor is descriptive only.** Testing it needs a t-test or bootstrap, since revenue is not a proportion.
 - **Aggregation happens in the app.** It loads one row per exposed user. That is fine for tens of thousands of users, but at scale it belongs in SQL or a warehouse, with pre-aggregated daily tables.
 - **No admin UI.** Experiments are created through the seed. Changing weights mid-test would reassign some users, so a real platform would freeze them once an experiment starts.
+- **The events API and the dashboard are public.** They have no rate limiting and no authentication. That is fine for a demo, but not for production.
 - **No consent banner or bot filtering.** A real store would need both before tracking anyone.
 - **`prisma db push` instead of migrations**, to keep the SQLite/Postgres switch simple. A production app would use versioned migrations.
 
