@@ -22,7 +22,7 @@ function row(
   return {
     variantKey,
     exposedAt: new Date(`${day}T12:00:00Z`),
-    conversions: { add_to_cart: false, purchase: false, upsell_add: false, ...converted },
+    conversions: { add_to_cart: false, purchase: false, accessory_add: false, ...converted },
     revenueCents: converted.purchase ? 1000 : 0,
   };
 }
@@ -37,7 +37,7 @@ describe("summarize", () => {
     ];
     const [control, b] = summarize(rows, variants);
     expect(control).toMatchObject({ visitors: 2, revenueCents: 1000 });
-    expect(control.conversions).toEqual({ add_to_cart: 1, purchase: 1, upsell_add: 0 });
+    expect(control.conversions).toEqual({ add_to_cart: 1, purchase: 1, accessory_add: 0 });
     expect(b.visitors).toBe(1);
     expect(b.conversions.add_to_cart).toBe(1);
   });
@@ -80,6 +80,15 @@ describe("analyze", () => {
     expect(analysis.comparisons).toHaveLength(3); // one per metric for the single challenger
   });
 
+  it("hides a metric every exposed user has already completed", () => {
+    const rows = [
+      row("control", "2026-01-01", { add_to_cart: true, purchase: true }),
+      row("B", "2026-01-01", { add_to_cart: true }),
+    ];
+    const analysis = analyze({ primaryMetric: "purchase", minSamplePerVariant: 1, variants }, rows);
+    expect(analysis.metrics).toEqual(["purchase", "accessory_add"]);
+  });
+
   it("does not conclude below the pre-registered sample size", () => {
     const rows = [row("control", "2026-01-01"), row("B", "2026-01-01", { purchase: true })];
     const analysis = analyze(
@@ -91,7 +100,22 @@ describe("analyze", () => {
 });
 
 describe("loadExposureRows", () => {
-  beforeEach(() => resetDatabase("exp"));
+  beforeEach(async () => {
+    await resetDatabase("exp");
+    await db.product.upsert({
+      where: { id: "p-case" },
+      create: {
+        id: "p-case",
+        name: "Case",
+        description: "",
+        category: "Accessories",
+        priceCents: 1990,
+        emoji: "🧳",
+        color: "#fff",
+      },
+      update: {},
+    });
+  });
 
   it("only counts events that happened after the exposure", async () => {
     const exposedAt = new Date("2026-01-10T12:00:00Z");
@@ -117,8 +141,9 @@ describe("loadExposureRows", () => {
         },
         {
           userId: "u1",
-          type: "click",
-          target: "upsell_add",
+          type: "add_to_cart",
+          productId: "p-case",
+          valueCents: 1990,
           createdAt: new Date("2026-01-11T00:00:00Z"),
         },
         // another user: ignored
@@ -135,7 +160,11 @@ describe("loadExposureRows", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].variantKey).toBe("B");
     expect(rows[0].exposedAt).toEqual(exposedAt);
-    expect(rows[0].conversions).toEqual({ add_to_cart: true, purchase: false, upsell_add: true });
+    expect(rows[0].conversions).toEqual({
+      add_to_cart: true,
+      purchase: false,
+      accessory_add: true,
+    });
     expect(rows[0].revenueCents).toBe(0);
   });
 

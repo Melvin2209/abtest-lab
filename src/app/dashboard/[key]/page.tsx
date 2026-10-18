@@ -5,7 +5,7 @@ import { CumulativeChart } from "@/components/dashboard/cumulative-chart";
 import { ResultsTable } from "@/components/dashboard/results-table";
 import { UpliftChart } from "@/components/dashboard/uplift-chart";
 import { VerdictBadge } from "@/components/dashboard/verdict-badge";
-import { METRICS, METRIC_KEYS, type MetricKey, getExperimentResults } from "@/lib/analysis";
+import { METRICS, type MetricKey, getExperimentResults } from "@/lib/analysis";
 import { formatPercent, formatPoints, formatPrice, formatPValue, formatUplift } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -92,7 +92,10 @@ export default async function ExperimentPage({ params }: { params: Promise<{ key
                   ) : (
                     <span className="font-medium text-[#006300]">✓ OK</span>
                   )}{" "}
-                  <span className="text-zinc-500">(p = {formatPValue(analysis.srm.pValue)})</span>
+                  <span className="text-zinc-500">
+                    (p {analysis.srm.pValue < 0.001 ? "" : "= "}
+                    {formatPValue(analysis.srm.pValue)})
+                  </span>
                 </dd>
               </div>
               <div>
@@ -112,7 +115,7 @@ export default async function ExperimentPage({ params }: { params: Promise<{ key
             <div className="mt-4">
               <UpliftChart
                 color={seriesColor(i + 1)}
-                rows={METRIC_KEYS.map((metric) => {
+                rows={analysis.metrics.map((metric) => {
                   const c = analysis.comparisons.find(
                     (x) => x.metric === metric && x.variantKey === variant.key,
                   )!;

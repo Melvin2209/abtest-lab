@@ -28,14 +28,20 @@ export function CumulativeChart({ points, variants }: Props) {
   const plotWidth = WIDTH - PAD.left - PAD.right;
   const plotHeight = HEIGHT - PAD.top - PAD.bottom;
   const maxRate = Math.max(...points.flatMap((p) => Object.values(p.rates)), 0.01);
-  const yMax = niceCeil(maxRate * 1.15);
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => t * yMax);
+  // About 4 gridlines at a round step (1%, 2%, 5%, 10%...).
+  const step = niceCeil((maxRate * 1.15) / 4);
+  const yMax = step * Math.ceil((maxRate * 1.15) / step);
+  const yTicks = Array.from({ length: Math.round(yMax / step) + 1 }, (_, i) => i * step);
 
   const x = (i: number) =>
     PAD.left + (points.length === 1 ? plotWidth / 2 : (i / (points.length - 1)) * plotWidth);
   const y = (rate: number) => PAD.top + plotHeight - (rate / yMax) * plotHeight;
 
   const last = points[points.length - 1];
+  const labelY = spreadLabels(
+    variants.map((v) => y(last.rates[v.key] ?? 0)),
+    16,
+  );
   const hovered = hover === null ? null : points[hover];
 
   function handleMove(event: React.MouseEvent<SVGRectElement>) {
@@ -81,7 +87,7 @@ export function CumulativeChart({ points, variants }: Props) {
                 fontSize={11}
                 fill={CHART.textMuted}
               >
-                {formatPercent(tick, 0)}
+                {formatPercent(tick, step < 0.01 ? 1 : 0)}
               </text>
             </g>
           ))}
@@ -115,7 +121,8 @@ export function CumulativeChart({ points, variants }: Props) {
               {/* Direct label at the end of each line. */}
               <text
                 x={x(points.length - 1) + 8}
-                y={y(last.rates[v.key] ?? 0) + (i === 0 ? -6 : 10)}
+                y={labelY[i]}
+                dominantBaseline="middle"
                 fontSize={12}
                 fill={CHART.textMuted}
               >
@@ -191,9 +198,24 @@ export function CumulativeChart({ points, variants }: Props) {
   );
 }
 
-/** Rounds up to a "nice" axis maximum (1, 2, 2.5 or 5 × a power of ten). */
+/** Rounds up to a "nice" number: 1, 2 or 5 × a power of ten. */
 function niceCeil(value: number): number {
   const power = 10 ** Math.floor(Math.log10(value));
-  const step = [1, 2, 2.5, 5, 10].find((s) => s * power >= value) ?? 10;
+  const step = [1, 2, 5, 10].find((s) => s * power >= value) ?? 10;
   return step * power;
+}
+
+/**
+ * Moves end-of-line labels apart so they never overlap (keeps their order,
+ * pushes each label down until it is at least `gap` px below the previous one).
+ */
+function spreadLabels(positions: number[], gap: number): number[] {
+  const order = positions.map((p, i) => ({ p, i })).sort((a, b) => a.p - b.p);
+  const result = [...positions];
+  let previous = -Infinity;
+  for (const { p, i } of order) {
+    result[i] = Math.max(p, previous + gap);
+    previous = result[i];
+  }
+  return result;
 }

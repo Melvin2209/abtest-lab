@@ -14,7 +14,7 @@ import {
 export const METRICS = {
   add_to_cart: { label: "Add-to-cart rate" },
   purchase: { label: "Purchase rate" },
-  upsell_add: { label: "Upsell accepted" },
+  accessory_add: { label: "Accessory added" },
 } as const;
 
 export type MetricKey = keyof typeof METRICS;
@@ -43,7 +43,7 @@ export async function loadExposureRows(experimentKey: string): Promise<ExposureR
       exposedAt: Date | string | number;
       addToCart: number | bigint;
       purchase: number | bigint;
-      upsellAdd: number | bigint;
+      accessoryAdd: number | bigint;
       revenueCents: number | bigint | null;
     }[]
   >`
@@ -52,11 +52,13 @@ export async function loadExposureRows(experimentKey: string): Promise<ExposureR
       x."exposedAt" AS "exposedAt",
       MAX(CASE WHEN e."type" = 'add_to_cart' THEN 1 ELSE 0 END) AS "addToCart",
       MAX(CASE WHEN e."type" = 'purchase' THEN 1 ELSE 0 END) AS "purchase",
-      MAX(CASE WHEN e."type" = 'click' AND e."target" = 'upsell_add' THEN 1 ELSE 0 END) AS "upsellAdd",
+      MAX(CASE WHEN e."type" = 'add_to_cart' AND p."category" = 'Accessories' THEN 1 ELSE 0 END) AS "accessoryAdd",
       SUM(CASE WHEN e."type" = 'purchase' THEN e."valueCents" ELSE 0 END) AS "revenueCents"
     FROM "Exposure" x
     LEFT JOIN "Event" e
       ON e."userId" = x."userId" AND e."createdAt" >= x."exposedAt"
+    LEFT JOIN "Product" p
+      ON p."id" = e."productId"
     WHERE x."experimentKey" = ${experimentKey}
     GROUP BY x."id", x."variantKey", x."exposedAt"
   `;
@@ -68,7 +70,7 @@ export async function loadExposureRows(experimentKey: string): Promise<ExposureR
     conversions: {
       add_to_cart: Number(row.addToCart) > 0,
       purchase: Number(row.purchase) > 0,
-      upsell_add: Number(row.upsellAdd) > 0,
+      accessory_add: Number(row.accessoryAdd) > 0,
     },
     revenueCents: Number(row.revenueCents ?? 0),
   }));
@@ -94,7 +96,7 @@ export function summarize(
       {
         ...v,
         visitors: 0,
-        conversions: { add_to_cart: 0, purchase: 0, upsell_add: 0 },
+        conversions: { add_to_cart: 0, purchase: 0, accessory_add: 0 },
         revenueCents: 0,
       },
     ]),
@@ -164,6 +166,8 @@ export type MetricComparison = {
 
 export type ExperimentAnalysis = {
   variants: VariantSummary[];
+  /** Metrics worth showing: the primary one first, then the informative secondary ones. */
+  metrics: MetricKey[];
   /** Every non-control variant compared to control, for every metric. */
   comparisons: MetricComparison[];
   srm: ReturnType<typeof sampleRatioMismatch>;
@@ -197,10 +201,20 @@ export function analyze(
     conversions: v.conversions[metric],
   });
 
+  // A metric that every exposed user has already completed carries no information
+  // (e.g. "add to cart" for a test whose exposure is triggered by adding to cart).
+  const metrics = [
+    primary,
+    ...METRIC_KEYS.filter(
+      (m) =>
+        m !== primary && !variants.every((v) => v.visitors > 0 && v.conversions[m] === v.visitors),
+    ),
+  ];
+
   const comparisons: MetricComparison[] = [];
   const verdicts: Record<string, Verdict> = {};
   for (const challenger of challengers) {
-    for (const metric of METRIC_KEYS) {
+    for (const metric of metrics) {
       const a = group(control, metric);
       const b = group(challenger, metric);
       const result = compareProportions(a, b);
@@ -218,6 +232,7 @@ export function analyze(
   const baseline = control.visitors ? control.conversions[primary] / control.visitors : 0;
   return {
     variants,
+    metrics,
     comparisons,
     srm,
     verdicts,

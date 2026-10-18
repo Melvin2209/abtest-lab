@@ -1,4 +1,4 @@
-import { type ExperimentAnalysis, METRICS, METRIC_KEYS, type MetricKey } from "@/lib/analysis";
+import { type ExperimentAnalysis, METRICS, type MetricKey } from "@/lib/analysis";
 import { formatPercent, formatPoints, formatPValue, formatUplift } from "@/lib/utils";
 import { seriesColor } from "./colors";
 
@@ -10,8 +10,7 @@ export function ResultsTable({
   analysis: ExperimentAnalysis;
   primaryMetric: MetricKey;
 }) {
-  // Primary metric first, then the secondary ones.
-  const metrics = [primaryMetric, ...METRIC_KEYS.filter((m) => m !== primaryMetric)];
+  const { metrics } = analysis; // primary metric first, then the secondary ones
 
   return (
     <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
