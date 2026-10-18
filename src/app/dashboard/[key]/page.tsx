@@ -6,7 +6,13 @@ import { ResultsTable } from "@/components/dashboard/results-table";
 import { UpliftChart } from "@/components/dashboard/uplift-chart";
 import { VerdictBadge } from "@/components/dashboard/verdict-badge";
 import { METRICS, type MetricKey, getExperimentResults } from "@/lib/analysis";
-import { formatPercent, formatPoints, formatPrice, formatPValue, formatUplift } from "@/lib/utils";
+import {
+  formatPercent,
+  formatPoints,
+  formatPrice,
+  formatPStatement,
+  formatUplift,
+} from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -54,8 +60,8 @@ export default async function ExperimentPage({ params }: { params: Promise<{ key
             <p className="mt-4 max-w-3xl text-zinc-700">
               <strong>{variant.name}</strong> converts at{" "}
               <strong>{formatPercent(result.rateB)}</strong> vs {formatPercent(result.rateA)} for{" "}
-              {control.name.toLowerCase()} ({formatUplift(result.relativeUplift)}, p ={" "}
-              {formatPValue(result.pValue)}). The true difference is plausibly between{" "}
+              {control.name.toLowerCase()} ({formatUplift(result.relativeUplift)},{" "}
+              {formatPStatement(result.pValue)}). The true difference is plausibly between{" "}
               {formatPoints(result.ci[0])} and {formatPoints(result.ci[1])}.
             </p>
 
@@ -92,10 +98,7 @@ export default async function ExperimentPage({ params }: { params: Promise<{ key
                   ) : (
                     <span className="font-medium text-[#006300]">✓ OK</span>
                   )}{" "}
-                  <span className="text-zinc-500">
-                    (p {analysis.srm.pValue < 0.001 ? "" : "= "}
-                    {formatPValue(analysis.srm.pValue)})
-                  </span>
+                  <span className="text-zinc-500">({formatPStatement(analysis.srm.pValue)})</span>
                 </dd>
               </div>
               <div>

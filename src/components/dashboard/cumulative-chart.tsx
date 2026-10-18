@@ -169,7 +169,7 @@ export function CumulativeChart({ points, variants }: Props) {
 
         {hovered && hover !== null && (
           <div
-            className="pointer-events-none absolute top-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm"
+            className="pointer-events-none absolute top-2 whitespace-nowrap rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm"
             style={{
               left: `${(x(hover) / WIDTH) * 100}%`,
               transform:

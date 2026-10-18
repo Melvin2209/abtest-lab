@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatPercent, formatPoints, formatPrice, formatPValue, formatUplift } from "./utils";
+import {
+  formatPercent,
+  formatPoints,
+  formatPrice,
+  formatPStatement,
+  formatPValue,
+  formatUplift,
+} from "./utils";
 
 describe("formatPercent", () => {
   it("formats a ratio as a percentage", () => {
@@ -27,5 +34,7 @@ describe("formatPoints / formatUplift / formatPValue", () => {
   it("caps p-value precision", () => {
     expect(formatPValue(0.0123)).toBe("0.012");
     expect(formatPValue(0.00001)).toBe("< 0.001");
+    expect(formatPStatement(0.0123)).toBe("p = 0.012");
+    expect(formatPStatement(0.00001)).toBe("p < 0.001");
   });
 });

@@ -27,3 +27,8 @@ export function formatUplift(value: number | null, digits = 1): string {
 export function formatPValue(p: number): string {
   return p < 0.001 ? "< 0.001" : p.toFixed(3);
 }
+
+/** "p = 0.012" or "p < 0.001", ready to drop into a sentence. */
+export function formatPStatement(p: number): string {
+  return p < 0.001 ? "p < 0.001" : `p = ${p.toFixed(3)}`;
+}

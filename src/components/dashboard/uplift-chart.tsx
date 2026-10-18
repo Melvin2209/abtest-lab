@@ -108,7 +108,7 @@ export function UpliftChart({ rows, color }: { rows: UpliftRow[]; color: string 
 
       {hover !== null && (
         <div
-          className="pointer-events-none absolute right-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm"
+          className="pointer-events-none absolute right-0 whitespace-nowrap rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm"
           style={{ top: hover * ROW_HEIGHT * 0.6 }}
         >
           <p className="font-medium text-zinc-900">{rows[hover].label}</p>
