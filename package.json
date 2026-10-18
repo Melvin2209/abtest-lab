@@ -19,7 +19,8 @@
     "db:reset": "prisma db push --force-reset && prisma db seed",
     "simulate": "tsx scripts/simulate-traffic.ts --reset",
     "e2e:db": "node -e \"require('fs').rmSync('e2e.db',{force:true})\" && prisma db push && prisma db seed",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "vercel-build": "node scripts/set-db-provider.mjs && prisma generate && prisma db push && prisma db seed && next build"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.1",
@@ -45,5 +46,8 @@
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.12"
+  },
+  "engines": {
+    "node": ">=20.19"
   }
 }
