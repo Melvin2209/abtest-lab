@@ -67,7 +67,7 @@ export const products = [
   {
     id: "p-controller",
     name: "Pixelforge Pro Controller",
-    category: "Gaming",
+    category: "Accessories",
     priceCents: 6900,
     emoji: "🕹️",
     color: "#d1fae5",
