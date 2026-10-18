@@ -16,7 +16,8 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:setup": "prisma db push && prisma db seed",
-    "db:reset": "prisma db push --force-reset && prisma db seed"
+    "db:reset": "prisma db push --force-reset && prisma db seed",
+    "simulate": "tsx scripts/simulate-traffic.ts --reset"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.1",
